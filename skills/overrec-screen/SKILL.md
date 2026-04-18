@@ -1,5 +1,6 @@
 ---
-name: overrec
+name: overrec-screen
+metadata: {"version": "0.2.0"}
 description: Use OverRec CLI to take screenshots, draw overlay rectangles, list monitors, find windows by title, or snap any app window to an exact position and size. Trigger when the user asks to screenshot a region, highlight/overlay an area, move/resize a window, fit a window to a rectangle, find a window by name, or capture what's on screen.
 allowed-tools: Bash
 ---
@@ -33,26 +34,38 @@ OverRec.exe cli monitors --all
 ```
 OverRec.exe cli draw --location X,Y --size WxH [--color COLOR] [--monitor N] [--timeout SECONDS]
 ```
-Colors: red, green, blue, yellow, orange, white, black. Default is blue.
+Colors: `red`, `green`, `blue`, `yellow`, `white`, `black`, or `#RRGGBB` hex. Default is blue.
 
 **Take a screenshot:**
 ```
-OverRec.exe cli screenshot --location X,Y --size WxH [--output FILE.png] [--monitor N]
+OverRec.exe cli screenshot --location X,Y --size WxH [--output FILE.png] [--no-clipboard] [--monitor N]
 ```
+By default the image is copied to the clipboard. Use `--output` to also save to file. Use `--no-clipboard` to skip clipboard.
 
 **Find a window by title keyword:**
 ```
-OverRec.exe cli window <keyword...>
+OverRec.exe cli window [--all] [<keyword...>]
 ```
-Prints a table of matching visible windows with their WindowID and title.
-Multiple keywords are ANDed (all must match). Case-insensitive. Supports any language.
+Lists visible windows whose title contains all given keywords (case-insensitive). Omit keywords to list every visible window.
 
-Output format:
+- Default: compact ID/title table
+- `--all`: also shows monitor number, location, and size (`max`/`min` for maximised/minimised)
+
+Output format (default):
 ```
 WindowID        Title
 ------------------------------------------------------------
 657846          Google Chrome
 329812          Visual Studio Code
+```
+
+Output format (`--all`):
+```
+WindowID        Mon   Location          Size          Title
+--------------------------------------------------------------------------------
+657846          0     0,0               1920x1080     Google Chrome
+329812          0     max               1920x1080     Visual Studio Code
+131070          1     1920,0            1280x720      Notepad
 ```
 
 **Snap a window to an exact position and size:**
@@ -71,8 +84,8 @@ OverRec.exe cli snap --windowid ID --location X,Y --size WxH [--monitor N]
 ### "Take a screenshot of [area/region]"
 1. If monitor layout is unknown, run `OverRec.exe cli monitors` first.
 2. Determine or ask for X, Y, width, height.
-3. Run screenshot command with `--output`.
-4. Report the saved file path.
+3. Run screenshot command. Use `--output FILE.png` to save to disk; add `--no-clipboard` to skip clipboard copy.
+4. Report the saved file path (or confirm it was copied to clipboard).
 
 ### "Highlight / draw an overlay on [area]"
 1. Determine coordinates and size.
@@ -82,6 +95,8 @@ OverRec.exe cli snap --windowid ID --location X,Y --size WxH [--monitor N]
 ### "Search for a window / find window ID by name"
 ```bash
 OverRec.exe cli window <keyword>
+OverRec.exe cli window --all <keyword>   # also shows monitor, location, size
+OverRec.exe cli window                  # list all visible windows
 ```
 - Parse the output: skip the header (first 2 lines), then each line has `WindowID` (first field) and `Title` (rest).
 - If no match, report that no window was found with that keyword.
@@ -140,7 +155,7 @@ i=0
 while true; do
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     OverRec.exe cli screenshot --location "$LOCATION" --size "$SIZE" \
-        --output "$OUTPUT_DIR/frame_${TIMESTAMP}.png"
+        --output "$OUTPUT_DIR/frame_${TIMESTAMP}.png" --no-clipboard
     echo "Captured frame $i at $TIMESTAMP"
     i=$((i+1))
     sleep "$INTERVAL"
