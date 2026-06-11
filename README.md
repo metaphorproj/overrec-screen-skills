@@ -12,6 +12,7 @@ A Claude Code skill that lets AI agents control screen overlays, take screenshot
 Trigger this skill when the user asks to:
 
 - Take a screenshot of a screen region (saved to file and/or clipboard)
+- Record a screen region to an animated GIF or H.264 MP4 (sync or background)
 - Draw a highlight/overlay rectangle on screen (named color or `#RRGGBB` hex)
 - List connected monitors and their resolutions, positions, and scale factors
 - Find a running window by title keyword (with optional location/size details)
@@ -30,6 +31,8 @@ Tile Notepad and Explorer side by side on monitor 1
 List all visible windows
 Show me Chrome's current position and size
 Watch the top-right corner of my screen every 5 seconds
+Record the top-left 1280x720 area to a GIF for 10 seconds
+Record monitor 1 to an MP4 for 15 seconds at 30fps in the background
 ```
 
 ## CLI reference summary
@@ -41,6 +44,7 @@ Watch the top-right corner of my screen every 5 seconds
 | `cli snap --windowid ID --location X,Y --size WxH` | Move and resize a window |
 | `cli draw --location X,Y --size WxH [--color] [--timeout]` | Draw overlay rectangle |
 | `cli screenshot --location X,Y --size WxH [--output] [--no-clipboard]` | Capture screen region |
+| `cli record --location X,Y --size WxH --output FILE.gif\|FILE.mp4 --timeout SECS [--fps] [--ffmpeg] [--async]` | Record screen region to GIF/MP4 |
 
 ### Command details
 
@@ -77,6 +81,12 @@ overrec cli screenshot --location X,Y --size WxH [--output FILE.png] [--no-clipb
 ```
 By default the image is copied to the clipboard. Use `--output` to save to file. Use `--no-clipboard` to skip clipboard copy.
 
+#### `record` — Record a screen region to GIF or MP4
+```
+overrec cli record --location X,Y --size WxH --output FILE.gif|FILE.mp4 --timeout SECS [--fps N] [--monitor ID] [--ffmpeg PATH] [--async]
+```
+`--timeout` is required. `.gif` uses a built-in encoder; `.mp4` requires FFmpeg (`ffmpeg` on PATH by default, or `--ffmpeg PATH`). `--fps` ranges 1-240 (default 10). On Windows, MP4 recording uses DXGI Desktop Duplication and the region must fit within one non-rotated monitor. Without `--async` the command blocks until the timeout elapses; with `--async` it starts a detached background worker and returns immediately.
+
 ## Typical workflow
 
 ```bash
@@ -94,6 +104,9 @@ overrec cli draw --location 0,0 --size 960x1080 --timeout 2
 
 # 5. Take a screenshot of that area
 overrec cli screenshot --location 0,0 --size 960x1080 --output left-half.png
+
+# 6. Or record a short clip of that area
+overrec cli record --location 0,0 --size 960x1080 --output left-half.gif --timeout 10
 ```
 
 The skill definition lives in [`skills/overrec-screen/SKILL.md`](skills/overrec-screen/SKILL.md).

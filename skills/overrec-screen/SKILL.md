@@ -1,7 +1,7 @@
 ---
 name: overrec-screen
-metadata: {"version": "0.2.0"}
-description: Use OverRec CLI to take screenshots, draw overlay rectangles, list monitors, find windows by title, or snap any app window to an exact position and size. Trigger when the user asks to screenshot a region, highlight/overlay an area, move/resize a window, fit a window to a rectangle, find a window by name, or capture what's on screen.
+metadata: {"version": "0.3.0"}
+description: Use OverRec CLI to take screenshots, record a screen region to GIF/MP4, draw overlay rectangles, list monitors, find windows by title, or snap any app window to an exact position and size. Trigger when the user asks to screenshot a region, record a screen recording/clip/GIF/video, highlight/overlay an area, move/resize a window, fit a window to a rectangle, find a window by name, or capture what's on screen.
 allowed-tools: Bash
 ---
 
@@ -41,6 +41,17 @@ Colors: `red`, `green`, `blue`, `yellow`, `white`, `black`, or `#RRGGBB` hex. De
 OverRec.exe cli screenshot --location X,Y --size WxH [--output FILE.png] [--no-clipboard] [--monitor N]
 ```
 By default the image is copied to the clipboard. Use `--output` to also save to file. Use `--no-clipboard` to skip clipboard.
+
+**Record a screen region to GIF or MP4:**
+```
+OverRec.exe cli record --location X,Y --size WxH --output FILE.gif|FILE.mp4 --timeout SECONDS [--fps N] [--monitor N] [--ffmpeg PATH] [--async]
+```
+- `--timeout SECONDS` is required — recording stops and the file is finalized after this many seconds.
+- `--fps N` — constant frame rate, 1-240 (default 10).
+- `.gif` output uses the built-in encoder (max size 65535x65535). `.mp4` output requires FFmpeg: by default `ffmpeg` from PATH, or pass `--ffmpeg PATH` for a specific executable.
+- On Windows, MP4 recording uses DXGI Desktop Duplication; the recording region must fit entirely within one (non-rotated) monitor.
+- Without `--async`, the command blocks until the timeout elapses, then prints `Recording saved: FILE`.
+- With `--async`, it starts a detached background worker and returns immediately, printing `Recording started in background (PID N): FILE`. The file is finalized when the timeout elapses, not when the command returns.
 
 **Find a window by title keyword:**
 ```
@@ -91,6 +102,21 @@ OverRec.exe cli snap --windowid ID --location X,Y --size WxH [--monitor N]
 1. Determine coordinates and size.
 2. Run draw command. Use `--timeout` if the user wants it temporary.
 3. Inform the user the overlay is active and how to dismiss it.
+
+### "Record a screen recording / clip / GIF / video of [area]"
+1. If monitor layout is unknown, run `OverRec.exe cli monitors` first.
+2. Determine coordinates, size, and recording duration (`--timeout` is required).
+3. Pick the output format from the file extension the user wants: `.gif` (no extra dependencies) or `.mp4` (requires FFmpeg — check with `ffmpeg -version`, or ask the user for `--ffmpeg PATH` if it's not on PATH).
+4. Run the record command. Use `--async` if the user wants control returned immediately while recording continues in the background.
+5. Report the saved file path once finalized (or the background PID for `--async`).
+
+```bash
+# Blocking: waits 10s, then reports the saved file
+OverRec.exe cli record --location 0,0 --size 1280x720 --output capture.gif --timeout 10
+
+# MP4 at 30fps, recorded in the background
+OverRec.exe cli record --location 0,0 --size 1920x1080 --output capture.mp4 --timeout 15 --fps 30 --async
+```
 
 ### "Search for a window / find window ID by name"
 ```bash
